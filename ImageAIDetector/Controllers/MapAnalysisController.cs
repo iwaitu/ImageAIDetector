@@ -6,7 +6,7 @@ using System.Diagnostics;
 namespace ImageAIDetector.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class MapAnalysisController : Controller
     {
         private readonly IHttpClientFactory _clientFactory;
@@ -18,6 +18,12 @@ namespace ImageAIDetector.Controllers
             _clientFactory = httpClientFactory;
             _logger = logger;
             _detectEngine = detectEngine;
+        }
+
+        [HttpGet]
+        public async Task<IActionResult> Get()
+        {
+            return Ok("hello");
         }
 
         [HttpPost]

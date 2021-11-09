@@ -160,8 +160,8 @@ namespace ImageAIDetector.Utils
 
         private Coordinate ConvertPixelToCoordinate(int x ,int y,int tileCol,int tileRow)
         {
-            var pntx =  tileRow * 256 * _mapLods[DownloadLevel].resolution + _originX + x;
-            var pnty = tileCol * 256 * _mapLods[DownloadLevel].resolution + _originY + y;
+            var pntx =  (tileRow * 256 + x) * _mapLods[DownloadLevel].resolution + _originX ;
+            var pnty = (tileCol * 256 * + y) * _mapLods[DownloadLevel].resolution + _originY;
             return new Coordinate(pntx, pnty);
         }
 

@@ -4,7 +4,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace ImageAIDetector.Controllers
 {
     [ApiController]
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class DetectorController : Controller
     {
         private readonly ILogger<DetectorController> _logger;
