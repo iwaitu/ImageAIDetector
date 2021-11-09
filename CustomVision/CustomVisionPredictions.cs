@@ -1,8 +1,8 @@
 ﻿using Microsoft.ML.Data;
 
-namespace ImageAIDetector
+namespace CustomVision
 {
-    public class WinePredictions
+    public class CustomVisionPredictions
     {
         [ColumnName("model_outputs0")]
         public float[]? PredictedLabels { get; set; }

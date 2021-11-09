@@ -1,6 +1,6 @@
-﻿namespace ImageAIDetector
+﻿namespace CustomVision
 {
-    public class WineModel
+    public class CustomVisionModel
     {
         public float[]? Labels { get; set; }
     }

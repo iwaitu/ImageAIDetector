@@ -1,7 +1,7 @@
 ﻿using Microsoft.ML.Transforms.Image;
 using System.Drawing;
 
-namespace ImageAIDetector
+namespace CustomVision
 {
     public struct ImageSettings
     {
@@ -9,7 +9,7 @@ namespace ImageAIDetector
         public const int imageWidth = 416;
     }
 
-    public class WineInput
+    public class CustomVisionInput
     {
         [ImageType(ImageSettings.imageHeight, ImageSettings.imageWidth)]
         public Bitmap? Image { get; set; }
