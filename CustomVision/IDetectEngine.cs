@@ -4,7 +4,7 @@ namespace CustomVision
 {
     public interface IDetectEngine
     {
-        Rectangle? ProcessDetectorResult(string name, FileStream stream);
-        byte[] ProcessDetector(string name, FileStream stream);
+        IdentityRect ProcessDetectorResult( Stream stream);
+        byte[] ProcessDetector(string name, Stream stream);
     }
 }

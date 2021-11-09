@@ -1,4 +1,5 @@
-﻿using System.Drawing;
+﻿
+using NetTopologySuite.Features;
 
 namespace ImageAIDetector.Utils
 {
@@ -10,7 +11,7 @@ namespace ImageAIDetector.Utils
         // 任务的拼图数据
         public byte[]? TaskData { get; set; }
         public string TaskId { get; }
-        public Rectangle? Result { get;set; }
+        public Feature Result { get;set; }
 
         public DownloadTask()
         {

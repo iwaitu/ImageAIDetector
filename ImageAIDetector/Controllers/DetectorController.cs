@@ -53,7 +53,7 @@ namespace ImageAIDetector.Controllers
                 using (var stream = System.IO.File.Create(filePath))
                 {
                     await file.CopyToAsync(stream);
-                    var data = _detectEngine.ProcessDetectorResult(file.Name, stream);
+                    var data = _detectEngine.ProcessDetectorResult( stream);
                     if (data != null)
                     {
                         return Ok(data);

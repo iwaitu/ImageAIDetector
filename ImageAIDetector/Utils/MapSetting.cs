@@ -21,6 +21,7 @@
     {
         public int col { get; set; }
         public int row { get; set; }
+        public int level { get; set; }
         public byte[] data { get; set; } 
     }
 

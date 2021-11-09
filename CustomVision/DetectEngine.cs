@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.ML;
 using Microsoft.ML.Transforms.Image;
+using NetTopologySuite.Features;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -22,7 +23,7 @@ namespace CustomVision
         }
 
 
-        public Rectangle? ProcessDetectorResult(string name, FileStream stream)
+        public IdentityRect ProcessDetectorResult(Stream stream)
         {
             Bitmap testImage;
             var context = new MLContext();
@@ -73,13 +74,13 @@ namespace CustomVision
                 width = originalWidth * width / ImageSettings.imageWidth;
                 height = originalHeight * height / ImageSettings.imageHeight;
 
-                return new Rectangle((int)x, (int)y, (int)width, (int)height);
+                return new IdentityRect { rectangle = new Rectangle((int)x, (int)y, (int)width, (int)height), description = boundingBox.Description };
             }
 
             return null;
         }
 
-        public byte[] ProcessDetector(string name, FileStream stream)
+        public byte[] ProcessDetector(string name, Stream stream)
         {
             Bitmap testImage;
             var context = new MLContext();
