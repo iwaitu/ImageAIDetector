@@ -88,9 +88,7 @@ namespace ImageAIDetector.Utils
                 var maxCol = tileRightBottom.col;
 
                 _logger.LogInformation($"cols = {allcols} , row = {allrows} , all tile count = {allcols*allrows}");
-                var startRow = tileLeftop.row;
-                var startCol = tileLeftop.col;
-
+                
                 //计算出纵向下载任务的次数
                 var rowTasks = (int)Math.Ceiling(allrows / (double)DrawImageRow);
                 
@@ -100,14 +98,16 @@ namespace ImageAIDetector.Utils
                 //任务创建完成,每个任务最多DrawImageX* DrawImageY 个瓦片，部分任务可能不足8个瓦片
                 for (int j = 0; j < rowTasks; j++)
                 {
-                    startCol += j * DrawImageRow;
+                    var startRow = tileLeftop.row + j * DrawImageRow;
                     for (int i = 0; i < colTasks; i++)
                     {
-                        startRow += i * DrawImageCol;
+                        var startCol = tileLeftop.col + i * DrawImageCol;
                         var item = CreateTask(startRow, startCol, maxRow, maxCol);
-                        Jobs.Add(item);
+                        if(item.Tiles.Count > DrawImageRow* DrawImageCol / 2)
+                        {
+                            Jobs.Add(item);
+                        }
                     }
-                    startRow = tileLeftop.row;
                     
                 }
 
@@ -117,7 +117,32 @@ namespace ImageAIDetector.Utils
             return 0;
 
         }
+        /// <summary>
+        /// 创建下载任务
+        /// </summary>
+        /// <param name="rowStart"></param>
+        /// <param name="colStart"></param>
+        /// <param name="maxRow"></param>
+        /// <param name="maxCol"></param>
+        /// <returns></returns>
+        private DownloadTask CreateTask(int rowStart, int colStart, int maxRow, int maxCol)
+        {
+            var taskdownload = new DownloadTask();
+            for (int i = 0; i < DrawImageRow; i++)
+            {
+                for (int j = 0; j < DrawImageCol; j++)
+                {
+                    if (rowStart + i > maxRow || colStart + j > maxCol)
+                    {
+                        break;
+                    }
+                    var taskTile = new TileInfo { row = rowStart + i, col = colStart + j, level = DownloadLevel };
+                    taskdownload.Tiles.Add(taskTile);
+                }
 
+            }
+            return taskdownload;
+        }
 
         public async Task<FeatureCollection> ProcessAllJobs(IDetectEngine detectEngine)
         {
@@ -267,36 +292,7 @@ namespace ImageAIDetector.Utils
         }
 
 
-        /// <summary>
-        /// 创建下载任务
-        /// </summary>
-        /// <param name="rowStart"></param>
-        /// <param name="colStart"></param>
-        /// <param name="maxRow"></param>
-        /// <param name="maxCol"></param>
-        /// <returns></returns>
-        private DownloadTask CreateTask(int rowStart, int colStart,int maxRow, int maxCol)
-        {
-            var taskdownload = new DownloadTask();
-            for (int i = 0; i < DrawImageRow; i++)
-            {
-                for (int j = 0; j < DrawImageCol; j++)
-                {
-                    if(rowStart + i > maxRow )
-                    {
-                        break;
-                    }
-                    if(colStart + j > maxCol)
-                    {
-                        break;
-                    }
-                    var taskTile = new TileInfo { row = rowStart + i, col = colStart + j ,level = DownloadLevel};
-                    taskdownload.Tiles.Add(taskTile);
-                }
-
-            }
-            return taskdownload;
-        }
+        
 
         /// <summary>
         /// 根据空间坐标计算DownloadLod 这个比例尺下的瓦片索引

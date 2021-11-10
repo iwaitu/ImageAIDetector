@@ -43,11 +43,14 @@ namespace ImageAIDetector.Controllers
                     return Ok("地图服务地址不可用!");
                 }
 
-                mapHelper.CalcularTaskJobs();
+                var jobcount = mapHelper.CalcularTaskJobs();
+                
                 var ret = await mapHelper.ProcessAllJobs(_detectEngine);
                 var gjw = new NetTopologySuite.IO.GeoJsonWriter();
                 var result = gjw.Write(ret);
                 sw.Stop();
+                _logger.LogInformation($"job count: {jobcount}");
+                _logger.LogInformation("analysis finished!");
                 return Ok(new { result = result,timespaned =  sw.ElapsedMilliseconds });
             }
             catch (Exception ex)
