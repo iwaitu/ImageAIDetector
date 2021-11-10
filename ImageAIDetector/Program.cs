@@ -13,7 +13,12 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<IDetectEngine, DetectEngine>();
 builder.Services.AddHttpClient();
 builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
-
+builder.Services.AddCors(o => o.AddPolicy("MyPolicy", builder =>
+{
+    builder.AllowAnyOrigin()
+           .AllowAnyMethod()
+           .AllowAnyHeader();
+}));
 var app = builder.Build();
 
 // Configure the HTTP request pipeline.
@@ -25,6 +30,7 @@ var app = builder.Build();
 app.UseSwagger();
 app.UseSwaggerUI();
 //app.UseHttpsRedirection();
+app.UseCors("MyPolicy");
 
 app.UseAuthorization();
 
