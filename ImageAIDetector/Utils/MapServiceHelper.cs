@@ -23,10 +23,10 @@ namespace ImageAIDetector.Utils
         public List<DownloadTask> Jobs = new List<DownloadTask>();
 
         /// <summary>
-        /// 拼图方案 4*2 
+        /// 拼图方案 4*3 
         /// </summary>
-        public const int DrawImageX = 4;
-        public const int DrawImageY = 3;
+        public const int DrawImageRow = 3;
+        public const int DrawImageCol = 4;
 
         public MapServiceHelper(TargetObject target, IHttpClientFactory httpClientFactory, ILogger logger)
         {
@@ -82,27 +82,28 @@ namespace ImageAIDetector.Utils
                 var tileRightTop = CalcularTileIndex(_targetObject.RightTop.x, _targetObject.RightTop.y, DownloadLevel);
                 var tileLeftBottom = CalcularTileIndex(_targetObject.LeftBottom.x, _targetObject.LeftBottom.y, DownloadLevel);
                 var tileRightBottom = CalcularTileIndex(_targetObject.RightBottom.x, _targetObject.RightBottom.y, DownloadLevel);
-                var allcols = tileLeftBottom.col - tileLeftop.col + 1;
-                var allrows = tileRightBottom.row - tileLeftBottom.row + 1;
+                var allrows = tileLeftBottom.row - tileLeftop.row + 1;
+                var allcols = tileRightBottom.col - tileLeftBottom.col + 1;
                 var maxRow = tileRightBottom.row;
-                var maxCol = tileLeftBottom.col;
+                var maxCol = tileRightBottom.col;
 
                 _logger.LogInformation($"cols = {allcols} , row = {allrows} , all tile count = {allcols*allrows}");
                 var startRow = tileLeftop.row;
                 var startCol = tileLeftop.col;
 
-                //计算出横向下载任务的次数
-                var rowTasks = (int)Math.Ceiling(allrows / (double)DrawImageX);
                 //计算出纵向下载任务的次数
-                var colTasks = (int)Math.Ceiling(allcols / (double)DrawImageY);
+                var rowTasks = (int)Math.Ceiling(allrows / (double)DrawImageRow);
+                
+                //计算出横向下载任务的次数
+                var colTasks = (int)Math.Ceiling(allcols / (double)DrawImageCol);
 
                 //任务创建完成,每个任务最多DrawImageX* DrawImageY 个瓦片，部分任务可能不足8个瓦片
-                for (int j = 0; j < colTasks; j++)
+                for (int j = 0; j < rowTasks; j++)
                 {
-                    startCol += j * DrawImageY;
-                    for (int i = 0; i < rowTasks; i++)
+                    startCol += j * DrawImageRow;
+                    for (int i = 0; i < colTasks; i++)
                     {
-                        startRow += i * DrawImageX;
+                        startRow += i * DrawImageCol;
                         var item = CreateTask(startRow, startCol, maxRow, maxCol);
                         Jobs.Add(item);
                     }
@@ -153,15 +154,15 @@ namespace ImageAIDetector.Utils
             var polygon = factory.CreatePolygon(coordinates.ToArray());
             var attributes = new AttributesTable();
             attributes.Add("Id", result.taskId);
-            attributes.Add("Description", result.description);
+            attributes.Add("Description", result.description + "");
             var feature = new Feature(polygon, attributes);
             return feature;
         }
 
         private Coordinate ConvertPixelToCoordinate(int x ,int y,int tileCol,int tileRow)
         {
-            var pntx =  (tileRow * 256 + x) * _mapLods[DownloadLevel].resolution + _originX ;
-            var pnty = (tileCol * 256 + y) * _mapLods[DownloadLevel].resolution + _originY;
+            var pntx =  (tileCol * 256 + x) * _mapLods[DownloadLevel].resolution + _originX ;
+            var pnty = _originY - ((tileRow+1) * 256 - y) * _mapLods[DownloadLevel].resolution;
             return new Coordinate(pntx, pnty);
         }
 
@@ -176,7 +177,7 @@ namespace ImageAIDetector.Utils
                 {
                     var client = _clientFactory.CreateClient();
                     CancellationTokenSource cts = new CancellationTokenSource(6000);
-                    var request = new HttpRequestMessage(HttpMethod.Get, _targetObject.mapServiceUrl + $"/tile/{tile.level}/{tile.col}/{tile.row}");
+                    var request = new HttpRequestMessage(HttpMethod.Get, _targetObject.mapServiceUrl + $"/tile/{tile.level}/{tile.row}/{tile.col}");
                     request.Headers.Add("User-Agent", "HttpClientFactory-AI");
                     var response = await client.SendAsync(request,cts.Token);
                     
@@ -186,7 +187,7 @@ namespace ImageAIDetector.Utils
                     }
                     else
                     {
-                        _logger.LogError($"Get Remote Data From /tile/{tile.level}/{tile.col}/{tile.row} failed! ");
+                        _logger.LogError($"Get Remote Data From /tile/{tile.level}/{tile.row}/{tile.col} failed! ");
                     }
                     
                 }
@@ -194,7 +195,7 @@ namespace ImageAIDetector.Utils
                 {
                     if (_logger != null)
                     {
-                        _logger.LogError($"Get Remote Data From /tile/{tile.level}/{tile.col}/{tile.row} failed! {ex.Message}");
+                        _logger.LogError($"Get Remote Data From /tile/{tile.level}/{tile.row}/{tile.col} failed! {ex.Message}");
                     }
                 }
                 finally
@@ -224,10 +225,11 @@ namespace ImageAIDetector.Utils
         private byte[] MergeTile(List<TileInfo> list,string taskid)
         {
             if(list.Count == 0 ) return null;
-            if (list.Count(p => p.data != null) < DrawImageX * DrawImageY / 2) return null;
+            //如果瓦片数量少于拼图瓦片要求的一半，则不拼图
+            if (list.Count(p => p.data != null) < DrawImageCol * DrawImageRow / 2) return null;
             int RowCount = list.GroupBy(p=>p.row).Count();
             int ColCount = list.GroupBy(p=>p.col).Count();
-            Bitmap result = new Bitmap(RowCount * 256, ColCount * 256);
+            Bitmap result = new Bitmap(ColCount * 256, RowCount * 256);
             Graphics g1 = Graphics.FromImage(result);
             
             var startRow = list.OrderBy(p => p.row).First().row;
@@ -249,7 +251,7 @@ namespace ImageAIDetector.Utils
                     {
                         bmp = new Bitmap(256, 256);
                     }
-                    g1.DrawImage((Image)bmp, 0 + (i * 256), 0 + (j * 256));
+                    g1.DrawImage((Image)bmp, 0 + (j * 256), 0 + (i * 256));
                     bmp.Dispose(); 
                     
                 }
@@ -276,9 +278,9 @@ namespace ImageAIDetector.Utils
         private DownloadTask CreateTask(int rowStart, int colStart,int maxRow, int maxCol)
         {
             var taskdownload = new DownloadTask();
-            for (int i = 0; i < DrawImageX; i++)
+            for (int i = 0; i < DrawImageRow; i++)
             {
-                for (int j = 0; j < DrawImageY; j++)
+                for (int j = 0; j < DrawImageCol; j++)
                 {
                     if(rowStart + i > maxRow )
                     {
@@ -305,8 +307,8 @@ namespace ImageAIDetector.Utils
         private TileInfo CalcularTileIndex(float x, float y ,int level = 8)
         {
             var resolution = _mapLods[level].resolution;
-            var col = (int)((_originY - y) / (256 * resolution));
-            var row = (int)((x - _originX) / (256 * resolution));
+            var row = (int)((_originY - y) / (256 * resolution));
+            var col = (int)((x - _originX) / (256 * resolution));
             return new TileInfo() { col= col, row = row };
         }
 
