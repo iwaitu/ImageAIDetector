@@ -1,0 +1,125 @@
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>Search widget with custom source | Sample | ArcGIS API for JavaScript 4.21</title>
+
+    <style>
+      html,
+      body,
+      #viewDiv {
+        padding: 0;
+        margin: 0;
+        height: 100%;
+        width: 100%;
+      }
+    </style>
+
+    <link rel="stylesheet" href="https://js.arcgis.com/4.21/esri/themes/light/main.css" />
+    <script src="https://js.arcgis.com/4.21/"></script>
+    <script src="./jquery.min.js" type="text/javascript"></script>
+    <script>
+      require([
+      "esri/Map",
+      "esri/Basemap",
+      "esri/layers/MapImageLayer",
+      "esri/layers/TileLayer",
+       "esri/layers/GraphicsLayer",
+      "esri/Graphic",
+      "esri/request",
+      "esri/views/MapView",
+      "esri/widgets/Search",
+      "esri/widgets/Search/SearchSource",
+      "esri/geometry/geometryEngine",
+      "esri/geometry/Point",
+      "esri/widgets/Sketch",
+      ], (
+        Map,
+        Basemap,
+        MapImageLayer,
+        TileLayer,
+        GraphicsLayer,
+        Graphic,
+        esriRequest,
+        MapView,
+        Search,
+        SearchSource,
+        geometryEngine,
+        Point,
+        Sketch,
+      ) => {
+
+        const url = "https://onemap-gis.nnland.cn/proxy/area/in/newbasemap/08d919a9-bfc4-4168-8810-607ff40b29cc/mapserver";
+        var basemapLayer = new TileLayer({
+          url: url
+        });
+        
+        const graphicsLayer = new GraphicsLayer();
+        
+        const map = new Map({
+          layers: [basemapLayer,graphicsLayer]
+        });
+
+        const view = new MapView({
+          container: "viewDiv",
+          map: map,
+        });
+        const sketch = new Sketch({
+          view,
+          layer: graphicsLayer
+        });
+        
+        view.when(() => {
+          const sketch = new Sketch({
+            layer: graphicsLayer,
+            view: view,
+            creationMode: "update"
+          });
+          
+          sketch.on("update",(event)=>{
+            if (event.state === "complete") {
+              const graphic = event.graphics[0];
+              var extent = graphic.geometry.extent;
+              var leftop = { x : parseInt(extent.xmin) , y : parseInt(extent.ymax)};
+              var leftbottom = {x: parseInt(extent.xmin), y : parseInt(extent.ymin)};
+              var righttop = {x : parseInt(extent.xmax), y : parseInt(extent.ymax)};
+              var rightbottom = {x : parseInt(extent.xmax), y : parseInt(extent.ymin)};
+              var obj = {
+                  leftTop:leftop,
+                  leftBottom:leftbottom,
+                  rightTop:righttop,
+                  rightBottom:rightbottom,
+                  mapServiceUrl: url
+                };
+                $.ajax({
+                  type: "POST",
+                  url: "https://aitest.nngeo.net/api/mapanalysis",
+                  data: JSON.stringify(obj),
+                  dataType : "json",
+                  headers: {
+                    "Content-Type":"application/json"
+                  },
+                  success: function (ret) {
+                    console.log(ret.result);
+                    var fs = JSON.parse(ret.result);
+                    fs.features.map((item,i)=>{
+                      console.log(item.Description);
+                    });
+                  },
+                  error: function (result, status) {
+                    console.log(result);
+                  }
+                });
+            }
+          });
+          view.ui.add(sketch, "top-right");
+        });
+      });
+      
+    </script>
+  </head>
+
+  <body>
+    <div id="viewDiv"></div>
+  </body>
+</html>

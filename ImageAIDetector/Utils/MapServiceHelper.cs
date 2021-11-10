@@ -152,7 +152,7 @@ namespace ImageAIDetector.Utils
             GeometryFactory factory = new GeometryFactory();
             var polygon = factory.CreatePolygon(coordinates.ToArray());
             var attributes = new AttributesTable();
-            attributes.Add("Id", Guid.NewGuid().ToString("N"));
+            attributes.Add("Id", result.taskId);
             attributes.Add("Description", result.description);
             var feature = new Feature(polygon, attributes);
             return feature;
@@ -161,7 +161,7 @@ namespace ImageAIDetector.Utils
         private Coordinate ConvertPixelToCoordinate(int x ,int y,int tileCol,int tileRow)
         {
             var pntx =  (tileRow * 256 + x) * _mapLods[DownloadLevel].resolution + _originX ;
-            var pnty = (tileCol * 256 * + y) * _mapLods[DownloadLevel].resolution + _originY;
+            var pnty = (tileCol * 256 + y) * _mapLods[DownloadLevel].resolution + _originY;
             return new Coordinate(pntx, pnty);
         }
 
@@ -208,9 +208,12 @@ namespace ImageAIDetector.Utils
             task.TaskData = MergeTile(task.Tiles, task.TaskId);
             using(var ms = new MemoryStream(task.TaskData))
             {
-                return detectEngine.ProcessDetectorResult(ms);
+                var ret = detectEngine.ProcessDetectorResult(ms);
+                if(ret != null)
+                {
+                    ret.taskId = task.TaskId;
+                }
             }
-            //return detectEngine.ProcessDetectorResult()
 
             return null;
 

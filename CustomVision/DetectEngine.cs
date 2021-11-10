@@ -110,7 +110,7 @@ namespace CustomVision
 
             if (boundingBoxes.Count > 1)
             {
-                var maxConfidence = boundingBoxes.Where(p => p.Dimensions.X > 0 && p.Dimensions.Y > 0).Max(b => b.Confidence);
+                var maxConfidence = boundingBoxes.Max(b => b.Confidence);
                 var topBoundingBox = boundingBoxes.FirstOrDefault(b => b.Confidence == maxConfidence);
 
                 boundingBoxes.Clear();

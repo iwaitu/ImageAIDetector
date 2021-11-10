@@ -11,5 +11,7 @@ namespace CustomVision
     {
         public Rectangle rectangle { get; set; }
         public string description { get; set; }
+
+        public string taskId { get; set; }
     }
 }
