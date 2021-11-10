@@ -93,7 +93,7 @@
                 };
                 $.ajax({
                   type: "POST",
-                  url: "https://aitest.nngeo.net/api/mapanalysis",
+                  url: "https://localhost:7168/api/mapanalysis",
                   data: JSON.stringify(obj),
                   dataType : "json",
                   headers: {
@@ -103,7 +103,7 @@
                     console.log(ret.result);
                     var fs = JSON.parse(ret.result);
                     fs.features.map((item,i)=>{
-                      console.log(item.Description);
+                      console.log(item.properties[0].Description);
                     });
                   },
                   error: function (result, status) {

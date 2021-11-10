@@ -212,6 +212,7 @@ namespace ImageAIDetector.Utils
                 if(ret != null)
                 {
                     ret.taskId = task.TaskId;
+                    return ret;
                 }
             }
 
