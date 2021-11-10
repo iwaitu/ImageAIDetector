@@ -4,7 +4,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:6.0 AS base
 RUN rm -f /etc/localtime \
 && ln -sv /usr/share/zoneinfo/Asia/Shanghai /etc/localtime \
 && echo "Asia/Shanghai" > /etc/timezone
-RUN apt-get update && apt-get install -y libgdiplus
+RUN apt-get update  
+RUN apt-get install -y apt-utils  
+RUN apt-get install -y libgdiplus  
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
