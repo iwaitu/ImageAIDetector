@@ -24,4 +24,13 @@
     <ProjectReference Include="..\CustomVision\CustomVision.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Models\labels.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="Models\model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
