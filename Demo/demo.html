@@ -33,6 +33,8 @@
       "esri/geometry/geometryEngine",
       "esri/geometry/Point",
       "esri/widgets/Sketch",
+      "esri/symbols/SimpleLineSymbol",
+      "esri/geometry/Polygon",
       ], (
         Map,
         Basemap,
@@ -47,6 +49,8 @@
         geometryEngine,
         Point,
         Sketch,
+        SimpleLineSymbol,
+        Polygon,
       ) => {
 
         const url = "https://onemap-gis.nnland.cn/proxy/area/in/newbasemap/08d919a9-bfc4-4168-8810-607ff40b29cc/mapserver";
@@ -68,6 +72,15 @@
           view,
           layer: graphicsLayer
         });
+
+        const simpleFillSymbol = {
+          type: "simple-fill",
+          color: [227, 139, 79, 0.8],  // Orange, opacity 80%
+          outline: {
+            color: [255, 255, 255],
+            width: 1
+          }
+        };
         
         view.when(() => {
           const sketch = new Sketch({
@@ -102,8 +115,24 @@
                   success: function (ret) {
                     console.log(ret.result);
                     var fs = JSON.parse(ret.result);
+                   
                     fs.features.map((item,i)=>{
                       console.log(item.properties.Id + "," + item.properties.Description);
+                      const polygon = new Polygon({
+                        hasZ: false,
+                        hasM: false,
+                        rings: item.geometry.coordinates,
+                        spatialReference: { wkid: 4524 }
+                      });
+                      const polylineGraphic = new Graphic({
+                        geometry: polygon,
+                        symbol: simpleFillSymbol,
+                        attributes: {
+                          name: item.properties.Id,
+                          description: item.properties.Description,
+                        },
+                      });
+                      graphicsLayer.add(polylineGraphic);
                     });
                   },
                   error: function (result, status) {

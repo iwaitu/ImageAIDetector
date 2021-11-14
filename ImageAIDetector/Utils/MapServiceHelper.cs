@@ -19,6 +19,7 @@ namespace ImageAIDetector.Utils
         private const int DownloadLevel = 8;
         private int _originX = 0;
         private int _originY = 0;
+        private int _spatialReferenceWkid = 0;
 
         public List<DownloadTask> Jobs = new List<DownloadTask>();
 
@@ -64,7 +65,7 @@ namespace ImageAIDetector.Utils
 
                 _originX = mapconfig.GetValue<int>("tileInfo:origin:x");
                 _originY = mapconfig.GetValue<int>("tileInfo:origin:y");
-
+                _spatialReferenceWkid = mapconfig.GetValue<int>("spatialReference:wkid");
                 _logger.LogInformation($"orgin x = {_originX} , y = {_originY}");
                 return true;
             }
@@ -177,6 +178,7 @@ namespace ImageAIDetector.Utils
             coordinates.Add(ConvertPixelToCoordinate(result.rectangle.Left, result.rectangle.Top, StartTileCol, StartTileRow));
             GeometryFactory factory = new GeometryFactory();
             var polygon = factory.CreatePolygon(coordinates.ToArray());
+            polygon.SRID = _spatialReferenceWkid;
             var attributes = new AttributesTable();
             attributes.Add("Id", result.taskId);
             attributes.Add("Description", result.description + "");
