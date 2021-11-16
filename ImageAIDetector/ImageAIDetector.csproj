@@ -19,6 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CustomVision\CustomVision.csproj" />
+    <ProjectReference Include="..\TesseractOcr\TesseractOcr.csproj" />
   </ItemGroup>
 
   <ItemGroup>
