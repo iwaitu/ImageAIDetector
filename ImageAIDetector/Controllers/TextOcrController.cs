@@ -1,6 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using EnlargeImage;
 using Microsoft.AspNetCore.Mvc;
-using TesseractOcr;
 
 namespace ImageAIDetector.Controllers
 {
@@ -13,15 +12,18 @@ namespace ImageAIDetector.Controllers
         {
             if (file.Length > 0)
             {
-                var filePath = Path.GetTempFileName();
+                var filePath = "target.bmp";
 
                 using (var stream = System.IO.File.Create(filePath))
                 {
                     await file.CopyToAsync(stream);
-                    return OcrDetector.ReadText(stream);
-
+                    
                 }
-                
+                using(var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
+                {
+                    var resizedImage =  imgUtils.ProcessBitmap(filePath);
+                    return imgUtils.ProcessBitmap(resizedImage);
+                }
             }
             return await Task.FromResult("");
         }

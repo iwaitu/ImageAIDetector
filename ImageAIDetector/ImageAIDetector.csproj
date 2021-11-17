@@ -19,7 +19,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\CustomVision\CustomVision.csproj" />
-    <ProjectReference Include="..\TesseractOcr\TesseractOcr.csproj" />
+    <ProjectReference Include="..\EnlargeImage\EmguCvImage.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -27,6 +27,12 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
     <None Update="Models\model.onnx">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="tessdata\chi_sim.traineddata">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+    <None Update="tessdata\eng.traineddata">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
