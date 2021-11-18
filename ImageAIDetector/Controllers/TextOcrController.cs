@@ -21,8 +21,8 @@ namespace ImageAIDetector.Controllers
                 }
                 using(var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
                 {
-                    var resizedImage =  imgUtils.ProcessBitmap(filePath);
-                    return imgUtils.ProcessBitmap(resizedImage);
+                    var result = imgUtils.RecognizeProcess(filePath);
+                    return await Task.FromResult(result);
                 }
             }
             return await Task.FromResult("");

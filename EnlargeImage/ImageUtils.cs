@@ -1,5 +1,8 @@
 ﻿using Emgu.CV;
+using Emgu.CV.Features2D;
+using Emgu.CV.Flann;
 using Emgu.CV.Structure;
+using Emgu.CV.Util;
 using System.Drawing;
 
 using Tesseract;
@@ -30,7 +33,7 @@ namespace EnlargeImage
                     break;
             }
             
-            //_tesseractEngine.SetVariable("tessedit_char_whitelist", "ABCDEFHKLMNPRSTVXY1234567890");
+            _tesseractEngine.SetVariable("tessedit_char_whitelist", "桂ABCDEFHKLMNPRSTVXY1234567890");
         }
 
         public void Dispose()
@@ -41,7 +44,7 @@ namespace EnlargeImage
             }
         }
 
-        public string EnlargeProcess(string filepath)
+        public string RecognizeProcess(string filepath)
         {
             try
             {
@@ -50,14 +53,13 @@ namespace EnlargeImage
                 FileInfo fi = new FileInfo(filepath);
 
 
-                Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>()
-                    .SmoothGaussian(3).ThresholdBinaryInv(new Gray(128), new Gray(255));
+                Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>().ThresholdBinaryInv(new Gray(128), new Gray(255));
+                var city = FindCity(imgTarget);
+                ImageConverter converter = new ImageConverter();
+                var dataTarget = (byte[])converter.ConvertTo(imgTarget.AsBitmap(), typeof(byte[]));
 
-                var name = fi.Name.Substring(0,fi.Name.Length - 4) + "_large.jpg";
-                var filename = Path.Combine(fi.Directory.FullName, name);
-                imgTarget.Save(filename);
-
-                return filename;
+                var text = ProcessOcr(dataTarget);
+                return city + text.Trim();
             }
             catch (Exception ex)
             {
@@ -66,7 +68,33 @@ namespace EnlargeImage
             
         }
 
-        public string ProcessBitmap(string filename)
+        public string FindCity(Image<Gray, byte> imgScene)
+        {
+            Image<Gray, byte> imgTemp = new Image<Gray, byte>(@"D:\dev\ivilson\ImageAIDetector\TestLibrary\template\桂.bmp");
+            var vp = ProcessImage(imgTemp, imgScene);
+            if(vp != null)
+            {
+                return "桂";
+            }
+            return string.Empty;
+        }
+        public string ProcessOcr(byte[] data)
+        {
+            if (_tesseractEngine != null)
+            {
+                using (var pix = Pix.LoadFromMemory(data))
+                {
+                    var paper = _tesseractEngine.Process(pix);
+                    if (paper != null)
+                    {
+                        return paper.GetText();
+                    }
+                }
+
+            }
+            return "";
+        }
+        public string ProcessOcr(string filename)
         {
             if(_tesseractEngine !=null)
             {
@@ -95,6 +123,144 @@ namespace EnlargeImage
                 }
                 return ms.ToArray();
             }
+        }
+
+        private static VectorOfPoint ProcessImage(Image<Gray, byte> template, Image<Gray, byte> sceneImage)
+        {
+            try
+            {
+                // initialization
+                VectorOfPoint finalPoints = null;
+                Mat homography = null;
+                VectorOfKeyPoint templateKeyPoints = new VectorOfKeyPoint();
+                VectorOfKeyPoint sceneKeyPoints = new VectorOfKeyPoint();
+                Mat tempalteDescriptor = new Mat();
+                Mat sceneDescriptor = new Mat();
+
+                Mat mask;
+                int k = 2;
+                double uniquenessthreshold = 0.80;
+                VectorOfVectorOfDMatch matches = new VectorOfVectorOfDMatch();
+
+                // feature detectino and description
+                Brisk featureDetector = new Brisk();
+                featureDetector.DetectAndCompute(template, null, templateKeyPoints, tempalteDescriptor, false);
+                featureDetector.DetectAndCompute(sceneImage, null, sceneKeyPoints, sceneDescriptor, false);
+
+                // Matching
+                BFMatcher matcher = new BFMatcher(DistanceType.Hamming);
+                matcher.Add(tempalteDescriptor);
+                matcher.KnnMatch(sceneDescriptor, matches, k);
+
+                mask = new Mat(matches.Size, 1, Emgu.CV.CvEnum.DepthType.Cv8U, 1);
+                mask.SetTo(new MCvScalar(255));
+
+                Features2DToolbox.VoteForUniqueness(matches, uniquenessthreshold, mask);
+
+                int count = Features2DToolbox.VoteForSizeAndOrientation(templateKeyPoints, sceneKeyPoints, matches, mask, 1.5, 20);
+
+                if (count >= 4)
+                {
+                    homography = Features2DToolbox.GetHomographyMatrixFromMatchedFeatures(templateKeyPoints,
+                        sceneKeyPoints, matches, mask, 5);
+                }
+
+                if (homography != null)
+                {
+                    Rectangle rect = new Rectangle(Point.Empty, template.Size);
+                    PointF[] pts = new PointF[]
+                    {
+                        new PointF(rect.Left,rect.Bottom),
+                        new PointF(rect.Right,rect.Bottom),
+                        new PointF(rect.Right,rect.Top),
+                        new PointF(rect.Left,rect.Top)
+                    };
+
+                    pts = CvInvoke.PerspectiveTransform(pts, homography);
+                    Point[] points = Array.ConvertAll<PointF, Point>(pts, Point.Round);
+                    finalPoints = new VectorOfPoint(points);
+                }
+
+                return finalPoints;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+
+        private static VectorOfPoint ProcessImageFLANN(Image<Gray, byte> template, Image<Gray, byte> sceneImage)
+        {
+            try
+            {
+                // initializations done
+                VectorOfPoint finalPoints = null;
+                Mat homography = null;
+                VectorOfKeyPoint templateKeyPoints = new VectorOfKeyPoint();
+                VectorOfKeyPoint sceneKeyPoints = new VectorOfKeyPoint();
+                Mat tempalteDescriptor = new Mat();
+                Mat sceneDescriptor = new Mat();
+
+                Mat mask;
+                int k = 2;
+                double uniquenessthreshold = 0.80;
+                VectorOfVectorOfDMatch matches = new VectorOfVectorOfDMatch();
+
+                // feature detectino and description
+                KAZE featureDetector = new KAZE();
+                featureDetector.DetectAndCompute(template, null, templateKeyPoints, tempalteDescriptor, false);
+                featureDetector.DetectAndCompute(sceneImage, null, sceneKeyPoints, sceneDescriptor, false);
+
+
+                // Matching
+
+                //KdTreeIndexParams ip = new KdTreeIndexParams();
+                //var ip = new AutotunedIndexParams();
+                var ip = new LinearIndexParams();
+                SearchParams sp = new SearchParams();
+                FlannBasedMatcher matcher = new FlannBasedMatcher(ip, sp);
+
+
+                matcher.Add(tempalteDescriptor);
+                matcher.KnnMatch(sceneDescriptor, matches, k);
+
+                mask = new Mat(matches.Size, 1, Emgu.CV.CvEnum.DepthType.Cv8U, 1);
+                mask.SetTo(new MCvScalar(255));
+
+                Features2DToolbox.VoteForUniqueness(matches, uniquenessthreshold, mask);
+
+                int count = Features2DToolbox.VoteForSizeAndOrientation(templateKeyPoints, sceneKeyPoints, matches, mask, 1.5, 20);
+
+                if (count >= 4)
+                {
+                    homography = Features2DToolbox.GetHomographyMatrixFromMatchedFeatures(templateKeyPoints,
+                        sceneKeyPoints, matches, mask, 5);
+                }
+
+                if (homography != null)
+                {
+                    Rectangle rect = new Rectangle(Point.Empty, template.Size);
+                    PointF[] pts = new PointF[]
+                    {
+                        new PointF(rect.Left,rect.Bottom),
+                        new PointF(rect.Right,rect.Bottom),
+                        new PointF(rect.Right,rect.Top),
+                        new PointF(rect.Left,rect.Top)
+                    };
+
+                    pts = CvInvoke.PerspectiveTransform(pts, homography);
+                    Point[] points = Array.ConvertAll<PointF, Point>(pts, Point.Round);
+                    finalPoints = new VectorOfPoint(points);
+                }
+
+                return finalPoints;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
         }
     }
 }

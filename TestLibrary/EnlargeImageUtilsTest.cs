@@ -10,12 +10,12 @@ namespace TestLibrary
         public void EnlargeImage()
         {
             var file = @"C:\Users\iwaitu\Pictures\333_large.jpg";
-            using(var imgUtils = new ImageUtils( TesseractLanguage.English))
+            using(var imgUtils = new ImageUtils( TesseractLanguage.Chinese))
             {
-                var resizeFile = imgUtils.EnlargeProcess(file);
+                var resizeFile = imgUtils.RecognizeProcess(file);
+
                 Assert.False(string.IsNullOrEmpty(resizeFile));
-                var text = imgUtils.ProcessBitmap(resizeFile);
-                Assert.False(string.IsNullOrEmpty(text));
+
             }
             
         }
