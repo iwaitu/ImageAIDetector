@@ -1,5 +1,7 @@
 ﻿using CustomVision;
 using Microsoft.AspNetCore.Mvc;
+using System.Drawing;
+using System.Drawing.Imaging;
 
 namespace ImageAIDetector.Controllers
 {
@@ -21,8 +23,6 @@ namespace ImageAIDetector.Controllers
         [Route("analysisdemo")]
         public async Task<IActionResult> AnalysisDemo(IFormFile file)
         {
-
-
             if (file.Length > 0)
             {
                 var filePath = Path.GetTempFileName();
@@ -30,15 +30,16 @@ namespace ImageAIDetector.Controllers
                 using (var stream = System.IO.File.Create(filePath))
                 {
                     await file.CopyToAsync(stream);
-                    var data = _detectEngine.ProcessDetector(file.Name, stream);
-                    if (data != null)
+                    var resultImage = _detectEngine.ProcessDetector(stream);
+                    using(var ms = new MemoryStream())
                     {
-                        return File(data, "image/jpeg");
+                        resultImage.Save(ms, ImageFormat.Jpeg);
+                        return File(ms.GetBuffer(), "image/jpeg");
                     }
+                    
 
                 }
             }
-
             return Ok();
         }
 

@@ -30,17 +30,22 @@ namespace ImageAIDetector.Controllers
                     await file.CopyToAsync(stream);
                     using(Bitmap bmpImage = new Bitmap(stream))
                     {
-                        var rect = _licensePlatDetectEngine.ProcessDetectorResult(stream);
-                        if (rect != null)
+                        var rects = _licensePlatDetectEngine.ProcessDetectorResult(stream);
+                        if (rects != null)
                         {
-                            using (var imgPlat = bmpImage.Clone(rect.rectangle, bmpImage.PixelFormat))
+                            var results = new List<string>();
+                            foreach (var rect in rects)
                             {
-                                using (var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
+                                using (var imgPlat = bmpImage.Clone(rect.rectangle, bmpImage.PixelFormat))
                                 {
-                                    var result = imgUtils.RecognizeProcess(imgPlat);
-                                    return await Task.FromResult(result);
+                                    using (var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
+                                    {
+                                        var result = imgUtils.RecognizeProcess(imgPlat);
+                                        results.Add(result);
+                                    }
                                 }
                             }
+                            return await Task.FromResult(string.Join(",",results));
 
                         }
                     }

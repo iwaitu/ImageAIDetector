@@ -1,6 +1,7 @@
 using CustomVision;
 using EnlargeImage;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 using Xunit;
@@ -33,23 +34,36 @@ namespace TestLibrary
         }
 
         [Fact]
+        public void TestArray()
+        {
+            var list = new List<string>();
+            list.Add("test1");
+            list.Add("test2");
+            var ret = string.Join(",", list);
+        }
+
+        [Fact]
         public void RecognizeCaptureImage()
         {
             var file = @"C:\Users\iwaitu\Pictures\666.jpg";
             using(var stream = new FileStream(file,FileMode.Open))
             using (Bitmap bmpImage = new Bitmap(stream))
             {
-                var rect = _licensePlatDetectEngine.ProcessDetectorResult(stream);
-                if (rect != null)
+                var rects = _licensePlatDetectEngine.ProcessDetectorResult(stream);
+                if (rects != null)
                 {
-                    using (var imgPlat = bmpImage.Clone(rect.rectangle, bmpImage.PixelFormat))
+                    foreach(var rect in rects)
                     {
-                        using (var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
+                        using (var imgPlat = bmpImage.Clone(rect.rectangle, bmpImage.PixelFormat))
                         {
-                            var result = imgUtils.RecognizeProcess(imgPlat);
-                            Assert.False(string.IsNullOrEmpty(result));
+                            using (var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
+                            {
+                                var result = imgUtils.RecognizeProcess(imgPlat);
+                                Assert.False(string.IsNullOrEmpty(result));
+                            }
                         }
                     }
+                    
 
                 }
             }

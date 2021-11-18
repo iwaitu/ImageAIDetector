@@ -153,7 +153,11 @@ namespace ImageAIDetector.Utils
                 var ret = await ProcessJob(job,detectEngine);
                 if (ret != null)
                 {
-                    job.Result = ConvertToFeature(ret, job.Tiles.Min(p => p.row), job.Tiles.Min(p => p.col));
+                    foreach (var item in ret)
+                    {
+                        job.Result.Add(ConvertToFeature(item, job.Tiles.Min(p => p.row), job.Tiles.Min(p => p.col)));
+                    }
+                    
                 }
                 
             }));
@@ -162,7 +166,10 @@ namespace ImageAIDetector.Utils
             {
                 if(job.Result != null)
                 {
-                    result.Add(job.Result);
+                    foreach(var item in job.Result)
+                    {
+                        result.Add(item);
+                    }
                 }
             }
             return result;
@@ -193,7 +200,7 @@ namespace ImageAIDetector.Utils
             return new Coordinate(pntx, pnty);
         }
 
-        private async Task<IdentityRect> ProcessJob(DownloadTask task, IDetectEngine detectEngine)
+        private async Task<IList<IdentityRect>> ProcessJob(DownloadTask task, IDetectEngine detectEngine)
         {
             SemaphoreSlim semaphore = new SemaphoreSlim(8);
             if (task.Tiles.Count < 5) return null;
@@ -239,7 +246,10 @@ namespace ImageAIDetector.Utils
                 var ret = detectEngine.ProcessDetectorResult(ms);
                 if(ret != null)
                 {
-                    ret.taskId = task.TaskId;
+                    foreach(var item in ret)
+                    {
+                        item.taskId = task.TaskId;
+                    }
                     return ret;
                 }
             }

@@ -5,6 +5,6 @@ namespace CustomVision
     public class CustomVisionPredictions
     {
         [ColumnName("model_outputs0")]
-        public float[]? PredictedLabels { get; set; }
+        public float[] CustomVisionType { get; set; }
     }
 }

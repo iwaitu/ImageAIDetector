@@ -4,8 +4,8 @@ namespace CustomVision
 {
     public interface IDetectEngine
     {
-        IdentityRect ProcessDetectorResult( Stream stream);
-        byte[] ProcessDetector(string name, Stream stream);
+        IList<IdentityRect> ProcessDetectorResult(Stream stream);
+        Bitmap ProcessDetector( Stream stream);
     }
 
     public interface IQuarryDetectEngine : IDetectEngine

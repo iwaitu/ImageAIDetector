@@ -11,11 +11,12 @@ namespace ImageAIDetector.Utils
         // 任务的拼图数据
         public byte[]? TaskData { get; set; }
         public string TaskId { get; }
-        public Feature Result { get;set; }
+        public List<Feature> Result { get;set; }
 
         public DownloadTask()
         {
             TaskId = Guid.NewGuid().ToString("N");
+            Result = new List<Feature>();
         }
     }
 }
