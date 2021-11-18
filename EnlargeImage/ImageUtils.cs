@@ -33,7 +33,7 @@ namespace EnlargeImage
                     break;
             }
             
-            _tesseractEngine.SetVariable("tessedit_char_whitelist", "桂ABCDEFHKLMNPRSTVXY1234567890");
+            _tesseractEngine.SetVariable("tessedit_char_whitelist", "ABCDEFHKLMNPRSTVXY1234567890");
         }
 
         public void Dispose()
@@ -44,6 +44,11 @@ namespace EnlargeImage
             }
         }
 
+        /// <summary>
+        /// 车牌影像识别车牌号
+        /// </summary>
+        /// <param name="filepath">裁切好的车牌图像</param>
+        /// <returns></returns>
         public string RecognizeProcess(string filepath)
         {
             try
@@ -65,7 +70,33 @@ namespace EnlargeImage
             {
                 return String.Empty;
             }
-            
+        }
+
+        /// <summary>
+        /// 车牌影像识别车牌号
+        /// </summary>
+        /// <param name="imgPlat">裁切好的车牌图像</param>
+        /// <returns></returns>
+        public string RecognizeProcess(Bitmap imgPlat)
+        {
+            try
+            {
+                Image<Bgr, byte> captureImage = imgPlat.ToImage<Bgr, byte>();
+                Image<Bgr, byte> resizedImage = captureImage.Resize((int)(captureImage.Width * 1.6), (int)(captureImage.Height * 1.6), Emgu.CV.CvEnum.Inter.LinearExact);
+
+                Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>().ThresholdBinaryInv(new Gray(128), new Gray(255));
+                imgTarget.Save("grayTarget.bmp");
+                var city = FindCity(imgTarget);
+                ImageConverter converter = new ImageConverter();
+                var dataTarget = (byte[])converter.ConvertTo(imgTarget.AsBitmap(), typeof(byte[]));
+
+                var text = ProcessOcr(dataTarget);
+                return city.Trim() + text.Trim();
+            }
+            catch (Exception ex)
+            {
+                return String.Empty;
+            }
         }
 
         public string FindCity(Image<Gray, byte> imgScene)

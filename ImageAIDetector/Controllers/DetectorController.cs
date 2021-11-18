@@ -9,9 +9,9 @@ namespace ImageAIDetector.Controllers
     {
         private readonly ILogger<DetectorController> _logger;
 
-        private readonly IDetectEngine _detectEngine;
+        private readonly IQuarryDetectEngine _detectEngine;
 
-        public DetectorController(ILogger<DetectorController> logger, IDetectEngine detectEngine)
+        public DetectorController(ILogger<DetectorController> logger, IQuarryDetectEngine detectEngine)
         {
             _logger = logger;
             _detectEngine = detectEngine;

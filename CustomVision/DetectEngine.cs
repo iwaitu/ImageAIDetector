@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using Microsoft.ML;
 using Microsoft.ML.Transforms.Image;
-using NetTopologySuite.Features;
 using System.Drawing;
 using System.Drawing.Imaging;
 
@@ -17,36 +16,60 @@ namespace CustomVision
 
         private static readonly (float x, float y)[] boxAnchors = { (0.573f, 0.677f), (1.87f, 2.06f), (3.34f, 5.47f), (7.88f, 3.53f), (9.77f, 9.17f) };
 
-        public DetectEngine(ILogger<DetectEngine> logger)
+        private DetectEngineType _engineType;
+
+        private PredictionEngine<CustomVisionInput, CustomVisionPredictions> _predictionEngine;
+        private string[] _labels;
+
+        public DetectEngine(ILogger<DetectEngine> logger,DetectEngineType engineType = DetectEngineType.Quarry)
         {
             _logger = logger;
+            _engineType = engineType;
+            InitPipeline();
         }
 
+        private void InitPipeline()
+        {
+            var mlContext = new MLContext();
+            var emptyData = new List<CustomVisionInput>();
+            var data = mlContext.Data.LoadFromEnumerable(emptyData);
+            switch (_engineType)
+            {
+                case DetectEngineType.Quarry:
+                    var pipeline = mlContext.Transforms.ResizeImages(resizing: ImageResizingEstimator.ResizingKind.Fill, outputColumnName: "data", imageWidth: ImageSettings.imageWidth, imageHeight: ImageSettings.imageHeight, inputColumnName: nameof(CustomVisionInput.Image))
+                            .Append(mlContext.Transforms.ExtractPixels(outputColumnName: "data"))
+                            .Append(mlContext.Transforms.ApplyOnnxModel(modelFile: "./Models/model.onnx", outputColumnName: "model_outputs0", inputColumnName: "data"));
+                    var model = pipeline.Fit(data);
+
+                    _predictionEngine = mlContext.Model.CreatePredictionEngine<CustomVisionInput, CustomVisionPredictions>(model);
+                    _labels = System.IO.File.ReadAllLines("./Models/labels.txt");
+                    break;
+                case DetectEngineType.LicensePlat:
+                    var pipeline1 = mlContext.Transforms.ResizeImages(resizing: ImageResizingEstimator.ResizingKind.Fill, outputColumnName: "data", imageWidth: ImageSettings.imageWidth, imageHeight: ImageSettings.imageHeight, inputColumnName: nameof(CustomVisionInput.Image))
+                            .Append(mlContext.Transforms.ExtractPixels(outputColumnName: "data"))
+                            .Append(mlContext.Transforms.ApplyOnnxModel(modelFile: "./Models/platmodel.onnx", outputColumnName: "model_outputs0", inputColumnName: "data"));
+                    var model1 = pipeline1.Fit(data);
+
+                    _predictionEngine = mlContext.Model.CreatePredictionEngine<CustomVisionInput, CustomVisionPredictions>(model1);
+                    _labels = System.IO.File.ReadAllLines("./Models/platlabels.txt");
+                    break;
+                default:
+                    break;
+            }
+
+            
+
+        }
 
         public IdentityRect ProcessDetectorResult(Stream stream)
         {
             Bitmap testImage;
-            var context = new MLContext();
-
-            var emptyData = new List<CustomVisionInput>();
-
-            var data = context.Data.LoadFromEnumerable(emptyData);
-
-            var pipeline = context.Transforms.ResizeImages(resizing: ImageResizingEstimator.ResizingKind.Fill, outputColumnName: "data", imageWidth: ImageSettings.imageWidth, imageHeight: ImageSettings.imageHeight, inputColumnName: nameof(CustomVisionInput.Image))
-                            .Append(context.Transforms.ExtractPixels(outputColumnName: "data"))
-                            .Append(context.Transforms.ApplyOnnxModel(modelFile: "./Models/model.onnx", outputColumnName: "model_outputs0", inputColumnName: "data"));
-
-            var model = pipeline.Fit(data);
-
-            var predictionEngine = context.Model.CreatePredictionEngine<CustomVisionInput, CustomVisionPredictions>(model);
-
-            var labels = System.IO.File.ReadAllLines("./Models/labels.txt");
 
             testImage = (Bitmap)Image.FromStream(stream);
 
-            var prediction = predictionEngine.Predict(new CustomVisionInput { Image = testImage });
+            var prediction = _predictionEngine.Predict(new CustomVisionInput { Image = testImage });
 
-            var boundingBoxes = ParseOutputs(prediction.PredictedLabels, labels);
+            var boundingBoxes = ParseOutputs(prediction.PredictedLabels, _labels);
 
             var originalWidth = testImage.Width;
             var originalHeight = testImage.Height;
@@ -83,27 +106,11 @@ namespace CustomVision
         public byte[] ProcessDetector(string name, Stream stream)
         {
             Bitmap testImage;
-            var context = new MLContext();
-
-            var emptyData = new List<CustomVisionInput>();
-
-            var data = context.Data.LoadFromEnumerable(emptyData);
-
-            var pipeline = context.Transforms.ResizeImages(resizing: ImageResizingEstimator.ResizingKind.Fill, outputColumnName: "data", imageWidth: ImageSettings.imageWidth, imageHeight: ImageSettings.imageHeight, inputColumnName: nameof(CustomVisionInput.Image))
-                            .Append(context.Transforms.ExtractPixels(outputColumnName: "data"))
-                            .Append(context.Transforms.ApplyOnnxModel(modelFile: "./Models/model.onnx", outputColumnName: "model_outputs0", inputColumnName: "data"));
-
-            var model = pipeline.Fit(data);
-
-            var predictionEngine = context.Model.CreatePredictionEngine<CustomVisionInput, CustomVisionPredictions>(model);
-
-            var labels = System.IO.File.ReadAllLines("./Models/labels.txt");
-
             testImage = (Bitmap)Image.FromStream(stream);
 
-            var prediction = predictionEngine.Predict(new CustomVisionInput { Image = testImage });
+            var prediction = _predictionEngine.Predict(new CustomVisionInput { Image = testImage });
 
-            var boundingBoxes = ParseOutputs(prediction.PredictedLabels, labels);
+            var boundingBoxes = ParseOutputs(prediction.PredictedLabels, _labels);
 
             var originalWidth = testImage.Width;
             var originalHeight = testImage.Height;

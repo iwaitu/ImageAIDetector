@@ -10,7 +10,8 @@ builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
-builder.Services.AddSingleton<IDetectEngine, DetectEngine>();
+builder.Services.AddSingleton<ILicensePlatDetectEngine, LicensePlatDetectEngine>();
+builder.Services.AddSingleton<IQuarryDetectEngine, QuarryDetectEngine>();
 builder.Services.AddHttpClient();
 builder.Services.AddMediatR(Assembly.GetExecutingAssembly());
 builder.Services.AddCors(o => o.AddPolicy("MyPolicy", builder =>
