@@ -54,8 +54,10 @@ namespace TestLibrary
                 {
                     foreach(var rect in rects)
                     {
+                        var newRect  = new Rectangle(rect.rectangle.X,rect.rectangle.Y, rect.rectangle.Width + 4, rect.rectangle.Height);
                         using (var imgPlat = bmpImage.Clone(rect.rectangle, bmpImage.PixelFormat))
                         {
+                            
                             using (var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
                             {
                                 var result = imgUtils.RecognizeProcess(imgPlat);

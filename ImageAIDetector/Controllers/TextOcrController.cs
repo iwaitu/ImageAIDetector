@@ -38,6 +38,7 @@ namespace ImageAIDetector.Controllers
                             {
                                 using (var imgPlat = bmpImage.Clone(rect.rectangle, bmpImage.PixelFormat))
                                 {
+                                    imgPlat.Save("platTarget.bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                                     using (var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
                                     {
                                         var result = imgUtils.RecognizeProcess(imgPlat);

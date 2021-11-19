@@ -1,4 +1,5 @@
 ﻿using Emgu.CV;
+using Emgu.CV.CvEnum;
 using Emgu.CV.Features2D;
 using Emgu.CV.Flann;
 using Emgu.CV.Structure;
@@ -83,8 +84,8 @@ namespace EnlargeImage
             {
                 Image<Bgr, byte> captureImage = imgPlat.ToImage<Bgr, byte>();
                 Image<Bgr, byte> resizedImage = captureImage.Resize((int)(captureImage.Width * 1.6), (int)(captureImage.Height * 1.6), Emgu.CV.CvEnum.Inter.LinearExact);
-
-                Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>().ThresholdBinaryInv(new Gray(128), new Gray(255));
+                //var fixedImage =  deskewImage(resizedImage);
+                Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>().ThresholdBinaryInv(new Gray(160), new Gray(255));
                 imgTarget.Save("grayTarget.bmp");
                 var city = FindCity(imgTarget);
                 ImageConverter converter = new ImageConverter();
@@ -153,6 +154,48 @@ namespace EnlargeImage
                     ms.Write(buffer, 0, read);
                 }
                 return ms.ToArray();
+            }
+        }
+
+        private Image<Bgr, byte> deskewImage(Image<Bgr, byte> img)
+        {
+            try
+            {
+                var SE = Mat.Ones(15, 15, DepthType.Cv8U, 1);
+                var binary = img.Convert<Gray, byte>()
+                    .SmoothGaussian(3)
+                    .ThresholdBinaryInv(new Gray(240), new Gray(255))
+                    .MorphologyEx(MorphOp.Dilate, SE, new Point(-1, -1), 1, BorderType.Default, new MCvScalar(0))
+                    .Erode(1);
+
+                var points = new VectorOfPoint();
+                CvInvoke.FindNonZero(binary, points);
+                var minAreaRect = CvInvoke.MinAreaRect(points);
+
+                var rotationMatrix = new Mat(2, 3, DepthType.Cv32F, 1);
+                var rotatedImage = img.CopyBlank();
+
+                //var corners = CvInvoke.BoxPoints(minAreaRect).Select(x => new Point((int)x.X, (int)x.Y)).ToArray();
+
+                //for (int i = 0; i < corners.Length; i++)
+                //{
+                //    CvInvoke.Line(img, corners[i], corners[(i + 1)%4], new MCvScalar(0, 255, 0), 2);
+                //    CvInvoke.PutText(img, i.ToString(), corners[i], FontFace.HersheySimplex, 1.0, new MCvScalar(0, 0, 255), 3);
+                //    CvInvoke.Circle(img, corners[i], 3, new MCvScalar(255, 0, 0), 5);
+                //}
+
+                var angle = minAreaRect.Angle < 45 ? minAreaRect.Angle : minAreaRect.Angle - 90;
+
+                CvInvoke.GetRotationMatrix2D(minAreaRect.Center, angle, 1.0, rotationMatrix);
+                CvInvoke.WarpAffine(img, rotatedImage, rotationMatrix, img.Size, borderMode: BorderType.Replicate);
+
+                //pictureBox1.Image = rotatedImage.ToBitmap();
+                return rotatedImage;
+
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
             }
         }
 
