@@ -1,0 +1,25 @@
+FROM ubuntu
+ENV LC_ALL=C.UTF-8 LANG=C.UTF-8
+
+
+# Bring the dotnet Framework
+RUN apt-get update && apt-get install -y wget && apt-get install -y git
+RUN wget https://packages.microsoft.com/config/ubuntu/18.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+RUN dpkg -i packages-microsoft-prod.deb
+RUN apt-get update
+RUN apt-get install -y apt-transport-https && apt-get update && apt-get install -y dotnet-sdk-6.0
+
+
+# Make sure all emgu dependencies are in place
+# http://www.emgu.com/wiki/index.php/Download_And_Installation#Getting_ready
+WORKDIR /mnt/emgu_repo
+RUN git clone https://github.com/emgucv/emgucv emgucv
+WORKDIR /mnt/emgu_repo/emgucv
+RUN git submodule update --init --recursive
+WORKDIR /mnt/emgu_repo/emgucv/platforms/ubuntu/18.04
+RUN apt-get update && apt-get -y install sudo
+RUN `cat ./apt_install_dependency.sh | grep -Ev "#!"` -y
+RUN ./cmake_configure.sh
+
+
+ENTRYPOINT ["bash"]
