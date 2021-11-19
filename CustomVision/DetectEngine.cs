@@ -74,7 +74,7 @@ namespace CustomVision
             var originalImageHeight = testImage.Height;
             var originalImageWidth = testImage.Width;
             
-            foreach (var box in detectedObjects)
+            foreach (var box in detectedObjects.Where(p=>p.Confidence > 0.5F))
             {
                 // Get Bounding Box Dimensions
                 var x = (int)Math.Max(box.Dimensions.X, 0);

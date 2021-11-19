@@ -21,19 +21,6 @@ namespace TestLibrary
         }
 
         [Fact]
-        public void RecognizePlatImage()
-        {
-            var file = @"C:\Users\iwaitu\Pictures\333_large.jpg";
-            using(var imgUtils = new ImageUtils( TesseractLanguage.Chinese))
-            {
-                var resizeFile = imgUtils.RecognizeProcess(file);
-
-                Assert.False(string.IsNullOrEmpty(resizeFile));
-
-            } 
-        }
-
-        [Fact]
         public void TestArray()
         {
             var list = new List<string>();
@@ -45,7 +32,7 @@ namespace TestLibrary
         [Fact]
         public void RecognizeCaptureImage()
         {
-            var file = @"C:\Users\iwaitu\Pictures\666.jpg";
+            var file = @"./testSamples/666.jpg";
             using(var stream = new FileStream(file,FileMode.Open))
             using (Bitmap bmpImage = new Bitmap(stream))
             {

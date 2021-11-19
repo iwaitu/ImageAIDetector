@@ -24,11 +24,10 @@ namespace ImageAIDetector.Controllers
         {
             if (file.Length > 0)
             {
-                var filePath = "target.bmp";
-                using (var stream = System.IO.File.Create(filePath))
+                using (var stream = new MemoryStream())
                 {
                     await file.CopyToAsync(stream);
-                    using(Bitmap bmpImage = new Bitmap(stream))
+                    using (Bitmap bmpImage = new Bitmap(stream))
                     {
                         var rects = _licensePlatDetectEngine.ProcessDetectorResult(stream);
                         if (rects != null)
@@ -38,7 +37,7 @@ namespace ImageAIDetector.Controllers
                             {
                                 using (var imgPlat = bmpImage.Clone(rect.rectangle, bmpImage.PixelFormat))
                                 {
-                                    imgPlat.Save("platTarget.bmp", System.Drawing.Imaging.ImageFormat.Bmp);
+                                    //imgPlat.Save("platTarget.bmp", System.Drawing.Imaging.ImageFormat.Bmp);
                                     using (var imgUtils = new ImageUtils(TesseractLanguage.Chinese))
                                     {
                                         var result = imgUtils.RecognizeProcess(imgPlat);

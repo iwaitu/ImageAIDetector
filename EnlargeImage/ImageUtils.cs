@@ -85,14 +85,16 @@ namespace EnlargeImage
                 Image<Bgr, byte> captureImage = imgPlat.ToImage<Bgr, byte>();
                 Image<Bgr, byte> resizedImage = captureImage.Resize((int)(captureImage.Width * 1.6), (int)(captureImage.Height * 1.6), Emgu.CV.CvEnum.Inter.LinearExact);
 
-                Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>().ThresholdBinaryInv(new Gray(160), new Gray(255));
-                imgTarget.Save("grayTarget.bmp");
+                Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>().ThresholdBinaryInv(new Gray(128), new Gray(255));
+                //imgTarget.Save("grayTarget.bmp");
                 var city = FindCity(imgTarget);
+
+                var numberImage = imgTarget.SmoothGaussian(3);
                 ImageConverter converter = new ImageConverter();
-                var dataTarget = (byte[])converter.ConvertTo(imgTarget.AsBitmap(), typeof(byte[]));
+                var dataTarget = (byte[])converter.ConvertTo(numberImage.AsBitmap(), typeof(byte[]));
 
                 var text = ProcessOcr(dataTarget);
-                return city.Trim() + text.Trim();
+                return city.Trim() + text.Replace("\n", String.Empty).Trim();
             }
             catch (Exception ex)
             {
