@@ -84,7 +84,7 @@ namespace EnlargeImage
             {
                 Image<Bgr, byte> captureImage = imgPlat.ToImage<Bgr, byte>();
                 Image<Bgr, byte> resizedImage = captureImage.Resize((int)(captureImage.Width * 1.6), (int)(captureImage.Height * 1.6), Emgu.CV.CvEnum.Inter.LinearExact);
-                //var fixedImage =  deskewImage(resizedImage);
+
                 Image<Gray, byte> imgTarget = resizedImage.Convert<Gray, byte>().ThresholdBinaryInv(new Gray(160), new Gray(255));
                 imgTarget.Save("grayTarget.bmp");
                 var city = FindCity(imgTarget);
@@ -102,7 +102,7 @@ namespace EnlargeImage
 
         public string FindCity(Image<Gray, byte> imgScene)
         {
-            Image<Gray, byte> imgTemp = new Image<Gray, byte>(@"D:\dev\ivilson\ImageAIDetector\TestLibrary\template\桂.bmp");
+            Image<Gray, byte> imgTemp = new Image<Gray, byte>(@"./templates/桂.bmp");
             var vp = ProcessImage(imgTemp, imgScene);
             if(vp != null)
             {
@@ -256,6 +256,42 @@ namespace EnlargeImage
                 }
 
                 return finalPoints;
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
+
+        }
+
+        private (Image<Bgr, byte>, List<Rectangle>) detectTextSegments(Image<Bgr, byte> img, Mat kernel = null)
+        {
+            try
+            {
+                if (kernel == null)
+                {
+                    kernel = Mat.Ones(3, 9, DepthType.Cv8U, 1);
+                }
+
+                var binary = img.Convert<Gray, byte>()
+                    .ThresholdBinaryInv(new Gray(240), new Gray(255))
+                    .MorphologyEx(MorphOp.Dilate, kernel, new Point(-1, -1), 1, BorderType.Default, new MCvScalar(255));
+
+                var temp = img.Clone();
+
+                var conours = new VectorOfVectorOfPoint();
+                var h = new Mat();
+                CvInvoke.FindContours(binary, conours, h, RetrType.External, ChainApproxMethod.ChainApproxSimple);
+
+                var bboxes = new List<Rectangle>();
+                for (int i = 0; i < conours.Size; i++)
+                {
+                    var bbox = CvInvoke.BoundingRectangle(conours[i]);
+                    bboxes.Add(bbox);
+                    CvInvoke.Rectangle(temp, bbox, new MCvScalar(0, 0, 255), 2);
+                }
+                bboxes = bboxes.OrderBy(x => x.Y).ToList();
+                return (temp, bboxes);
             }
             catch (Exception ex)
             {
